@@ -3,7 +3,6 @@ import User from '../schemas/User';
 import bcrypt from 'bcrypt';
 import * as Yup from 'yup';
 
-
 type UserData = {
   name: string,
   email: string,
