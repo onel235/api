@@ -18,7 +18,7 @@ class UserController {
 
     const schema = Yup.object().shape({
       name: Yup.string().required(),
-      email: Yup.string().email().required(),
+      email: Yup.string().email().required().max(80),
       password: Yup.string().required().min(8),
       confirmPassword: Yup.string()
         .oneOf([Yup.ref('password'), null], 'Password must match!')
@@ -34,28 +34,25 @@ class UserController {
 
     const userAlreadyExists = await User.find({ email: email });
 
-    console.log(userAlreadyExists);
-
-    if (userAlreadyExists) {
+    if (userAlreadyExists.length !== 0) {
       return res.status(400).json({
         mensagem: 'User already registed'
       });
     }
 
-    let _user = {};
-
     try {
       const hash = await bcrypt.hash(password, saltRounds);
-      _user = { name, email, hash };
+
+      await User.create({ name, email, password: hash });
+
+      return res.status(201).json({
+        mensagem: 'User created successfully!'
+      });
     } catch(e) {
       return res.status(500).json({
         mensagem: 'Error'
       })
     }
-
-    const user = await User.create(_user);
-
-    return res.status(201).json(user);
   }
 
   async update(req: Request, res: Response) {}
