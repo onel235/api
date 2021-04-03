@@ -10,15 +10,18 @@ type UserData = {
   password: string
 }
 
+type ErrorInformation = {
+  mensagem: String
+}
+
 class LoginController {
 
   /**
-   * Creates an user.
+   * Function used to log-in the user into the application.
    * @param req the incoming request
    * @param res the reponse
-   * @returns json with response
    */
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<any> {
     const { name, email, password, confirmPassword } = req.body;
 
     const schema = Yup.object().shape({
@@ -34,7 +37,8 @@ class LoginController {
       });
     }
 
-    const user: UserData = await User.findOne({ email: email });
+    let user: UserData;
+    user = await User.findOne({ email: email });
 
     if (! user) {
       return res.status(400).json({
