@@ -1,6 +1,14 @@
 import { Request, Response } from 'express';
 import User from '../schemas/User';
+import bcrypt from 'bcrypt';
 import * as Yup from 'yup';
+
+
+type UserData = {
+  name: string,
+  email: string,
+  password: string
+}
 
 class LoginController {
 
@@ -14,11 +22,8 @@ class LoginController {
     const { name, email, password, confirmPassword } = req.body;
 
     const schema = Yup.object().shape({
-      name: Yup.string().required(),
       email: Yup.string().email().required(),
-      password: Yup.string().required().min(8),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Password must match!')
+      password: Yup.string().required().min(8)
     });
 
     const validate = await schema.isValid(req.body);
@@ -29,17 +34,27 @@ class LoginController {
       });
     }
 
-    const userAlreadyExists = await User.find({ email: email });
+    const user: UserData = await User.findOne({ email: email });
 
-    if (userAlreadyExists) {
+    if (! user) {
       return res.status(400).json({
-        mensagem: 'User already registed'
+        mensagem: 'User not found'
       });
     }
 
-    const user = await User.create({ name, email, password });
+    const checkIfPasswordMatches = await bcrypt.compare(password, user.password);
 
-    return res.status(201).json(user);
+    if (!checkIfPasswordMatches) {
+      return res.status(400).json({
+        mensagem: 'Validation failed!'
+      });
+    }
+
+    return res.status(201).json(
+      {
+        name: user.name,
+        email: user.email
+      });
   }
 }
 
