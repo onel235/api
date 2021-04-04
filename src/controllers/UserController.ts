@@ -4,6 +4,8 @@ import bcrypt from 'bcrypt';
 import * as Yup from 'yup';
 
 const saltRounds = 10;
+var dateRegex =
+  new RegExp(/^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[012])[\/\-]\d{4}$/);
 
 class UserController {
 
@@ -14,14 +16,15 @@ class UserController {
    * @returns json with response
    */
   async create(req: Request, res: Response) {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password, birthday } = req.body;
 
     const schema = Yup.object().shape({
       name: Yup.string().required(),
       email: Yup.string().email().required().max(80),
       password: Yup.string().required().min(8),
       confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Password must match!')
+        .oneOf([Yup.ref('password'), null], 'Password must match!'),
+      birthday: Yup.string().matches(dateRegex)
     });
 
     const validate = await schema.isValid(req.body);
@@ -42,8 +45,7 @@ class UserController {
 
     try {
       const hash = await bcrypt.hash(password, saltRounds);
-
-      await User.create({ name, email, password: hash });
+      await User.create({ name, email, password: hash, birthday });
 
       return res.status(201).json({
         mensagem: 'User created successfully!'

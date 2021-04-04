@@ -1,17 +1,9 @@
 import { Request, Response } from 'express';
+import { jwtConfig } from '../config/jwt';
 import User from '../schemas/User';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import * as Yup from 'yup';
-
-type UserData = {
-  name: string,
-  email: string,
-  password: string
-}
-
-type ErrorInformation = {
-  mensagem: String
-}
 
 class LoginController {
 
@@ -21,7 +13,7 @@ class LoginController {
    * @param res the reponse
    */
   async create(req: Request, res: Response): Promise<any> {
-    const { name, email, password, confirmPassword } = req.body;
+    const { email, password } = req.body;
 
     const schema = Yup.object().shape({
       email: Yup.string().email().required(),
@@ -36,8 +28,7 @@ class LoginController {
       });
     }
 
-    let user: UserData;
-    user = await User.findOne({ email: email });
+    let user = await User.findOne({ email: email });
 
     if (! user) {
       return res.status(400).json({
@@ -53,11 +44,16 @@ class LoginController {
       });
     }
 
-    return res.status(201).json(
-      {
-        name: user.name,
-        email: user.email
-      });
+    const token = await jwt.sign(
+      { data: user.email },
+      jwtConfig.secretKey,
+      { expiresIn: jwtConfig.expiresIn }
+    );
+
+    return res.status(201).json({
+      type: 'Bearer',
+      tolen: token
+    });
   }
 }
 
